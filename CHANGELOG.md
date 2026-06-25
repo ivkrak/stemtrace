@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-06-25
+
 ### Fixed
 - WebSocket: deny unauthenticated connections during the handshake instead of accepting and then closing them. The accept-then-close path half-opened the connection, so when an unauthenticated client (e.g. a port scanner) aborted mid-handshake, uvicorn's legacy `websockets` implementation ran `close()` on a protocol whose `transfer_data_task` was never set, raising `AttributeError: 'WebSocketProtocol' object has no attribute 'transfer_data_task'`. Closing before `accept()` rejects the handshake (HTTP 403) without opening the protocol object.
 - Form login: build the login form action and redirects as relative paths instead of absolute URLs, and derive the session cookie's `Secure` flag from `X-Forwarded-Proto`. Behind a TLS-terminating proxy that doesn't forward the scheme to the ASGI scope (e.g. uvicorn without `--forwarded-allow-ips`), absolute URLs were downgraded to `http://`, so the browser posted the login form over http, the proxy answered `301 -> https`, the POST body was dropped, and login silently failed (with a mixed-content warning). stemtrace now works behind such a proxy without requiring forwarded-headers configuration.
