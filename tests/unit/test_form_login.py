@@ -112,6 +112,68 @@ class TestFormLoginProtection:
             )
             assert exc_info.value.code == 1008
 
+    def test_login_urls_relative_and_cookie_secure_behind_tls_proxy(self) -> None:
+        """Behind a TLS-terminating proxy, login URLs must stay relative and the
+        session cookie must still be Secure.
+
+        When the proxy forwards ``X-Forwarded-Proto: https`` but the ASGI scheme
+        is left as ``http`` (e.g. uvicorn without ``--forwarded-allow-ips``),
+        building absolute URLs from the request scheme downgrades the login form
+        action / redirects to ``http://``. The browser then posts over http, the
+        proxy answers 301->https, the POST body is dropped, and login silently
+        fails. Relative URLs keep the page's https scheme; the cookie's Secure
+        flag falls back to the forwarded-proto header.
+        """
+        app = FastAPI()
+        stemtrace.init_app(
+            app,
+            broker_url="memory://",
+            embedded_consumer=False,
+            serve_ui=False,
+            login_username="admin",
+            login_password="secret",  # NOSONAR - test credential only
+            login_secret="test-secret",
+        )
+        # ALB-style header; the ASGI scheme stays http (proxy headers not applied).
+        proxied = {"x-forwarded-proto": "https"}
+
+        with TestClient(app) as client:
+            # The login form action is a relative path, never an absolute URL
+            # that a proxy could downgrade to http.
+            page = client.get("/stemtrace/login", headers=proxied)
+            assert page.status_code == 200
+            assert 'action="/stemtrace/login"' in page.text
+            assert 'action="http' not in page.text
+
+            # Successful login: relative redirect + Secure cookie (via forwarded proto).
+            resp = client.post(
+                "/stemtrace/login",
+                data={
+                    "username": "admin",
+                    "password": "secret",
+                    "next": "/stemtrace/",
+                },  # NOSONAR - test credential only
+                headers=proxied,
+                follow_redirects=False,
+            )
+            assert resp.status_code == 303
+            assert resp.headers["location"] == "/stemtrace/"
+            assert "Secure" in resp.headers["set-cookie"]
+
+            # Failed login: relative redirect, not an absolute http:// URL.
+            bad = client.post(
+                "/stemtrace/login",
+                data={
+                    "username": "admin",
+                    "password": "nope",
+                    "next": "/stemtrace/",
+                },  # NOSONAR - test credential only
+                headers=proxied,
+                follow_redirects=False,
+            )
+            assert bad.headers["location"].startswith("/stemtrace/login?")
+            assert not bad.headers["location"].startswith("http")
+
     def test_invalid_credentials_redirects_to_login_with_error(self) -> None:
         """Invalid credentials redirect back to the login page with an error."""
         app = FastAPI()
@@ -136,9 +198,7 @@ class TestFormLoginProtection:
                 follow_redirects=False,
             )
             assert resp.status_code == 303
-            assert resp.headers["location"].startswith(
-                "http://testserver/stemtrace/login?"
-            )
+            assert resp.headers["location"].startswith("/stemtrace/login?")
 
             page = client.get(resp.headers["location"])
             assert page.status_code == 200
@@ -174,9 +234,8 @@ class TestFormLoginProtection:
 
             logout = client.post("/stemtrace/logout", follow_redirects=False)
             assert logout.status_code == 303
-            assert logout.headers["location"].startswith(
-                "http://testserver/stemtrace/login"
-            )
+            assert logout.headers["location"].startswith("/stemtrace/login")
+            assert not logout.headers["location"].startswith("http")
 
             forbidden = client.get("/stemtrace/api/health", follow_redirects=False)
             assert forbidden.status_code == 401

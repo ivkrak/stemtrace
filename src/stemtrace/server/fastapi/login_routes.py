@@ -40,6 +40,20 @@ def _safe_next(next_path: str | None, *, default: str) -> str:
     return next_path
 
 
+def _request_is_https(request: Request) -> bool:
+    """Best-effort HTTPS detection that survives a TLS-terminating proxy.
+
+    Falls back to the ``X-Forwarded-Proto`` header when the ASGI scheme is
+    ``http`` because proxy headers weren't applied to the scope (e.g. uvicorn
+    without ``--forwarded-allow-ips``). The first value of a comma-separated
+    list is the original client scheme.
+    """
+    if request.url.scheme == "https":
+        return True
+    forwarded = request.headers.get("x-forwarded-proto", "")
+    return forwarded.split(",")[0].strip().lower() == "https"
+
+
 def _login_page_html(*, action_path: str, error: str | None, next_path: str) -> str:
     """Render the login page HTML from a template."""
     escaped_title = html.escape(_DEFAULT_TITLE, quote=True)
@@ -92,7 +106,10 @@ def create_login_router(
         next_path = _safe_next(
             request.query_params.get("next"), default=default_next_path
         )
-        action_path = str(request.url_for("stemtrace_login_submit"))
+        # Relative path (not an absolute URL): the browser submits using the
+        # page's own scheme/host, so a TLS-terminating proxy that doesn't
+        # forward the scheme can't downgrade the form action to http.
+        action_path = request.url_for("stemtrace_login_submit").path
         rendered_html = _login_page_html(
             action_path=action_path, error=error, next_path=next_path
         )
@@ -125,7 +142,7 @@ def create_login_router(
             qs = {"error": "Invalid username or password"}
             if next_param:
                 qs["next"] = next_param
-            login_url = str(request.url_for("stemtrace_login_page"))
+            login_url = request.url_for("stemtrace_login_page").path
             return RedirectResponse(
                 url=login_url + "?" + urllib.parse.urlencode(qs),
                 status_code=303,
@@ -141,7 +158,7 @@ def create_login_router(
             value=config.create_session_cookie_value(),
             httponly=True,
             samesite="lax",
-            secure=request.url.scheme == "https",
+            secure=_request_is_https(request),
             path=config.cookie_path,
         )
         return response
@@ -149,7 +166,7 @@ def create_login_router(
     @router.post("/logout", include_in_schema=False, name="stemtrace_logout")
     async def logout(request: Request) -> RedirectResponse:
         """Clear the session cookie and redirect to login."""
-        login_url = str(request.url_for("stemtrace_login_page"))
+        login_url = request.url_for("stemtrace_login_page").path
         response = RedirectResponse(url=login_url, status_code=303)
         response.delete_cookie(key=config.cookie_name, path=config.cookie_path)
         return response
