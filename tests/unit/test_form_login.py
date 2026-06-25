@@ -73,6 +73,45 @@ class TestFormLoginProtection:
                 assert ext.ws_manager.connection_count == 1
             assert ext.ws_manager.connection_count == 0
 
+    def test_unauthenticated_websocket_denied_at_handshake(self) -> None:
+        """An unauthenticated WebSocket must be denied DURING the handshake,
+        without calling ``accept()`` first.
+
+        Accepting the handshake and then closing it half-opens the connection;
+        when an unauthenticated client (e.g. a port scanner) aborts during that
+        accept->close dance, uvicorn's legacy ``websockets`` implementation runs
+        ``close()`` on a protocol whose ``transfer_data_task`` was never set,
+        raising ``AttributeError: 'WebSocketProtocol' object has no attribute
+        'transfer_data_task'``. Denying before accept avoids opening the
+        protocol object at all. Regression test for that crash.
+        """
+        app = FastAPI()
+        stemtrace.init_app(
+            app,
+            broker_url="memory://",
+            embedded_consumer=False,
+            serve_ui=False,
+            login_username="admin",
+            login_password="secret",  # NOSONAR - test credential only
+            login_secret="test-secret",
+        )
+
+        with TestClient(app) as client:
+            accepted = False
+            with (
+                pytest.raises(WebSocketDisconnect) as exc_info,
+                client.websocket_connect("/stemtrace/ws") as ws,
+            ):
+                # Only reached if the server accepted the handshake first.
+                accepted = True
+                ws.receive_text()
+
+            assert accepted is False, (
+                "unauthenticated WebSocket must be denied before accept(); "
+                "accepting then closing crashes uvicorn's legacy websockets impl"
+            )
+            assert exc_info.value.code == 1008
+
     def test_invalid_credentials_redirects_to_login_with_error(self) -> None:
         """Invalid credentials redirect back to the login page with an error."""
         app = FastAPI()

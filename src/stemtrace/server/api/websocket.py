@@ -33,8 +33,12 @@ def create_websocket_router(
                 secret=form_auth_config.secret,
                 expected_username=form_auth_config.username,
             ):
-                # Close without registering the connection.
-                await websocket.accept()
+                # Deny the handshake without completing it. Accepting first and
+                # then closing half-opens the connection; if the unauthenticated
+                # client aborts during that dance, uvicorn's legacy websockets
+                # impl runs close() on a protocol whose transfer_data_task was
+                # never set and raises AttributeError. Closing before accept lets
+                # Starlette reject the handshake (HTTP 403) without opening it.
                 await websocket.close(code=1008)
                 return
 
