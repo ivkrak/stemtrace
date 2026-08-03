@@ -603,7 +603,9 @@ class TestRedisTransport:
         """consume() should retry (not raise/stop) after a transient Redis error."""
         from redis.exceptions import TimeoutError as RedisTimeoutError
 
-        monkeypatch.setattr("stemtrace.library.transports.redis.time.sleep", lambda _: None)
+        monkeypatch.setattr(
+            "stemtrace.library.transports.redis.time.sleep", lambda _: None
+        )
 
         serialized = sample_event.json().encode()
         call_count = 0
