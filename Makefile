@@ -103,39 +103,39 @@ release-check:
 # =============================================================================
 # Show current version
 version:
-	@uv run bump-my-version show current_version
+	@uvx bump-my-version show current_version
 
 # Dry run - show what would happen
 bump-dry:
-	uv run bump-my-version bump patch --dry-run --verbose
+	uvx bump-my-version bump patch --dry-run --verbose
 
 # Bump patch version (0.1.0 -> 0.1.1)
 bump-patch:
-	uv run bump-my-version bump patch
-	@NEW_VER=$$(uv run bump-my-version show current_version); \
+	uvx bump-my-version bump patch
+	@NEW_VER=$$(uvx bump-my-version show current_version); \
 	echo "✅ Version bumped to $$NEW_VER"; \
 	echo ""; \
 	echo "Next: make release"
 
 # Bump minor version (0.1.0 -> 0.2.0)
 bump-minor:
-	uv run bump-my-version bump minor
-	@NEW_VER=$$(uv run bump-my-version show current_version); \
+	uvx bump-my-version bump minor
+	@NEW_VER=$$(uvx bump-my-version show current_version); \
 	echo "✅ Version bumped to $$NEW_VER"; \
 	echo ""; \
 	echo "Next: make release"
 
 # Bump major version (0.1.0 -> 1.0.0)
 bump-major:
-	uv run bump-my-version bump major
-	@NEW_VER=$$(uv run bump-my-version show current_version); \
+	uvx bump-my-version bump major
+	@NEW_VER=$$(uvx bump-my-version show current_version); \
 	echo "✅ Version bumped to $$NEW_VER"; \
 	echo ""; \
 	echo "Next: make release"
 
 # Tag and push to trigger release workflow
 release:
-	@VERSION=$$(uv run bump-my-version show current_version); \
+	@VERSION=$$(uvx bump-my-version show current_version); \
 	TAG="v$$VERSION"; \
 	echo "Tagging $$TAG..."; \
 	git tag -a "$$TAG" -m "Release $$TAG"; \
