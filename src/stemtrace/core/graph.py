@@ -347,18 +347,28 @@ class TaskGraph(BaseModel):
 
         # If no GROUP node exists yet, create it as CHORD
         if group_node_id not in self.nodes:
+            common_parent = self._get_common_parent(members)
             self.nodes[group_node_id] = TaskNode(
                 task_id=group_node_id,
                 name="chord",
-                state=TaskState.PENDING,
+                state=self._compute_group_state(members),
                 node_type=NodeType.CHORD,
                 group_id=group_id,
                 chord_id=callback_id,  # Store callback reference
                 chord_callback_id=callback_id,
                 children=list(members),  # Add existing members as children
+                parent_id=common_parent,
             )
-            if group_node_id not in self.root_ids:
+            if common_parent is None and group_node_id not in self.root_ids:
                 self.root_ids.append(group_node_id)
+            elif common_parent is not None:
+                parent_node = self.nodes.get(common_parent)
+                if parent_node and group_node_id not in parent_node.children:
+                    parent_node.children.append(group_node_id)
+                if parent_node:
+                    for member_id in members:
+                        if member_id in parent_node.children:
+                            parent_node.children.remove(member_id)
             # Update member nodes to point to CHORD as parent
             for member_id in members:
                 if member_id in self.nodes:

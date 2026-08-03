@@ -1192,6 +1192,52 @@ class TestChordNodeCreation:
         members = graph.get_group_members(group_id)
         assert callback_id not in members
 
+    def test_multiple_chords_in_chain_are_linked(self) -> None:
+        """A later chord is linked after the preceding chord callback."""
+        graph = TaskGraph()
+        first_group_id = "first-chord"
+        first_callback_id = "first-callback"
+
+        graph.add_event(
+            TaskEvent(
+                task_id="first-header",
+                name="myapp.tasks.header",
+                state=TaskState.SUCCESS,
+                timestamp=datetime.now(UTC),
+                group_id=first_group_id,
+                chord_callback_id=first_callback_id,
+            )
+        )
+        graph.add_event(
+            TaskEvent(
+                task_id=first_callback_id,
+                name="myapp.tasks.callback",
+                state=TaskState.SUCCESS,
+                timestamp=datetime.now(UTC),
+                group_id=first_group_id,
+            )
+        )
+
+        second_group_id = "second-chord"
+        second_callback_id = "second-callback"
+        graph.add_event(
+            TaskEvent(
+                task_id="second-header",
+                name="myapp.tasks.header",
+                state=TaskState.SUCCESS,
+                timestamp=datetime.now(UTC),
+                parent_id=first_callback_id,
+                group_id=second_group_id,
+                chord_callback_id=second_callback_id,
+            )
+        )
+
+        second_chord_id = f"group:{second_group_id}"
+        assert graph.nodes[second_chord_id].parent_id == first_callback_id
+        assert second_chord_id in graph.nodes[first_callback_id].children
+        assert "second-header" not in graph.nodes[first_callback_id].children
+        assert second_chord_id not in graph.root_ids
+
     def test_chord_state_reflects_header_tasks_only(self) -> None:
         """CHORD state should reflect header task states, not callback."""
         graph = TaskGraph()
