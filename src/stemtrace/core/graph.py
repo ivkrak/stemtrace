@@ -228,9 +228,20 @@ class TaskGraph(BaseModel):
 
             group_node.state = self._compute_group_state(members)
 
-            # Update task's parent to point to group node (if no other parent)
+            # Re-parent the task to the group node, detaching it from any
+            # prior parent. A member joining after the group/chord node
+            # already exists may already have parent_id set to its real
+            # upstream task (from its own event); that link must be
+            # replaced by the synthetic container, same as members present
+            # at creation time, or the chain visually breaks (member still
+            # listed under both its real parent and the group).
             task_node = self.nodes[task_id]
-            if task_node.parent_id is None:
+            old_parent_id = task_node.parent_id
+            if old_parent_id != group_node_id:
+                if old_parent_id and old_parent_id in self.nodes:
+                    old_parent = self.nodes[old_parent_id]
+                    if task_id in old_parent.children:
+                        old_parent.children.remove(task_id)
                 task_node.parent_id = group_node_id
                 if task_id in self.root_ids:
                     self.root_ids.remove(task_id)

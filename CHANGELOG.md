@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-03
+
+### Fixed
+- Graph: re-parent a GROUP/CHORD member that joins after the container node
+  already exists (i.e. the 3rd+ member). Previously only members present at
+  container-creation time were detached from their real upstream parent; a
+  later member kept its original `parent_id` while also being added as a
+  group child, leaving it listed under both — breaking the chain visually.
+
 ## [0.1.1] - 2026-08-03
 
 ### Fixed

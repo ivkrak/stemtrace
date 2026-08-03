@@ -1033,6 +1033,55 @@ class TestGroupNodeState:
         # GROUP is NOT a root (it's under parent)
         assert group_node_id not in graph.root_ids
 
+    def test_third_member_with_common_parent_is_reparented_to_group(self) -> None:
+        """A member joining after GROUP creation must be detached from its
+        real parent and re-linked under the GROUP, same as the first batch.
+        """
+        graph = TaskGraph()
+        group_id = "group-late-join"
+        parent_id = "parent-task"
+
+        graph.add_event(
+            TaskEvent(
+                task_id=parent_id,
+                name="myapp.tasks.parent",
+                state=TaskState.STARTED,
+                timestamp=datetime.now(UTC),
+            )
+        )
+
+        # First two members create the GROUP node (creation batch).
+        for task_id in ("child-1", "child-2"):
+            graph.add_event(
+                TaskEvent(
+                    task_id=task_id,
+                    name="myapp.tasks.add",
+                    state=TaskState.STARTED,
+                    timestamp=datetime.now(UTC),
+                    parent_id=parent_id,
+                    group_id=group_id,
+                )
+            )
+
+        # Third member joins later, with the same real parent already set.
+        graph.add_event(
+            TaskEvent(
+                task_id="child-3",
+                name="myapp.tasks.add",
+                state=TaskState.STARTED,
+                timestamp=datetime.now(UTC),
+                parent_id=parent_id,
+                group_id=group_id,
+            )
+        )
+
+        group_node_id = f"group:{group_id}"
+        assert graph.nodes["child-3"].parent_id == group_node_id
+
+        parent_node = graph.nodes[parent_id]
+        assert "child-3" not in parent_node.children
+        assert group_node_id in parent_node.children
+
 
 class TestChordNodeCreation:
     """Tests for CHORD node creation and callback linking.
