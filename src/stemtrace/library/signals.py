@@ -71,6 +71,16 @@ def _extract_chord_info(chord_attr: Any) -> tuple[str | None, str | None]:
             group_id = opts.get("group_id") or opts.get("group")
             callback_id = opts.get("task_id")
 
+    # TEMPORARY diagnostic (WARNING so it shows without log-level config changes) —
+    # downgrade to DEBUG once the chord callback_id extraction bug is confirmed fixed.
+    logger.warning(
+        "_extract_chord_info: chord_attr=%r (type=%s) -> group_id=%r callback_id=%r",
+        chord_attr,
+        type(chord_attr).__name__,
+        group_id,
+        callback_id,
+    )
+
     return group_id, callback_id
 
 
