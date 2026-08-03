@@ -4,7 +4,7 @@
 
 > This is an unofficial fork of [iansokolskyi/stemtrace](https://github.com/iansokolskyi/stemtrace), published under a different PyPI name (`stemtrace-pydantic-v1`) because it downgrades the `pydantic` dependency from v2 to `~=1.10.15` (for projects that still pin pydantic v1). As a consequence, FastAPI is capped below `0.125.0` and Python is capped below `3.14` (FastAPI drops pydantic v1 support on 3.14+). All credit for the original project goes to Ian Sokolskyi; see [CHANGELOG.md](CHANGELOG.md) for what changed in this fork.
 
-[![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-darklime)](https://pypi.org/project/stemtrace-pydantic-v1)
+[![PyPI version](https://img.shields.io/badge/pypi-v0.1.1-darklime)](https://pypi.org/project/stemtrace-pydantic-v1)
 [![Python](https://img.shields.io/pypi/pyversions/stemtrace-pydantic-v1.svg)](https://pypi.org/project/stemtrace-pydantic-v1/)
 [![CI](https://github.com/ivkrak/stemtrace/actions/workflows/ci.yml/badge.svg)](https://github.com/ivkrak/stemtrace/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
