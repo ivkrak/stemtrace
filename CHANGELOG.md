@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-03
+
+This is the first release of **`stemtrace-pydantic-v1`**, an unofficial fork of
+[stemtrace](https://github.com/iansokolskyi/stemtrace) v0.3.4 published under a new PyPI
+name because it downgrades a core dependency. Version numbering restarts from 0.1.0 for
+this fork; see [stemtrace's changelog](https://github.com/iansokolskyi/stemtrace/blob/main/CHANGELOG.md)
+for history prior to the fork.
+
+### Changed
+- **Breaking:** downgraded `pydantic` from `>=2.0.0` to `>=1.10.15,<2.0.0`. All models
+  translated to pydantic v1 APIs (`class Config` instead of `model_config`/`ConfigDict`,
+  `.dict()`/`.json()`/`.parse_obj()` instead of `.model_dump()`/`.model_dump_json()`/
+  `.model_validate()`). Frozen-model mutation now raises `TypeError` instead of
+  `ValidationError` (pydantic v1 behavior), and `str` fields coerce scalars (e.g. `int`)
+  instead of rejecting them (pydantic v1 is more lenient than v2 here).
+- **Breaking:** capped `fastapi` to `<0.125.0` — 0.125.0 unconditionally imports
+  `pydantic.TypeAdapter` (a pydantic v2-only symbol), which breaks under pydantic v1.
+- **Breaking:** dropped Python 3.14 support (`requires-python` is now `>=3.10,<3.14`).
+  FastAPI hard-disables pydantic v1 support on Python 3.14+ regardless of FastAPI
+  version, so the server component cannot import under 3.14 with pydantic v1 installed.
+- Removed `bump-my-version` from the `dev` extra — it requires `pydantic>=2.0.0` and
+  made the dev dependency set unresolvable alongside the pydantic v1 pin. Run it via
+  `uvx bump-my-version` instead if needed.
+
 ## [0.3.4] - 2026-06-25
 
 ### Fixed

@@ -101,7 +101,7 @@ class RabbitMQTransport:
             event: Event to publish (TaskEvent or WorkerEvent).
         """
         try:
-            self._publish_payload(event.model_dump(mode="json"))
+            self._publish_payload(json.loads(event.json()))
         except Exception:
             event_id = self._event_identifier(event)
             logger.warning(
@@ -239,9 +239,9 @@ class RabbitMQTransport:
 
         if isinstance(parsed, dict):
             if "event_type" in parsed:
-                return WorkerEvent.model_validate(parsed)
+                return WorkerEvent.parse_obj(parsed)
             if "task_id" in parsed:
-                return TaskEvent.model_validate(parsed)
+                return TaskEvent.parse_obj(parsed)
         raise ValueError("Unknown event payload: missing event_type and task_id")
 
     @classmethod

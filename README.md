@@ -1,11 +1,12 @@
-# stemtrace 🌿
+# stemtrace-pydantic-v1 🌿
 
-**Zero-infrastructure Celery task flow visualizer**
+**Zero-infrastructure Celery task flow visualizer — pydantic v1 fork**
 
-[![PyPI version](https://img.shields.io/badge/pypi-v0.3.4-darklime)](https://pypi.org/project/stemtrace)
-[![Python](https://img.shields.io/pypi/pyversions/stemtrace.svg)](https://pypi.org/project/stemtrace/)
-[![CI](https://github.com/iansokolskyi/stemtrace/actions/workflows/ci.yml/badge.svg)](https://github.com/iansokolskyi/stemtrace/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/iansokolskyi/stemtrace/graph/badge.svg)](https://codecov.io/gh/iansokolskyi/stemtrace)
+> This is an unofficial fork of [iansokolskyi/stemtrace](https://github.com/iansokolskyi/stemtrace), published under a different PyPI name (`stemtrace-pydantic-v1`) because it downgrades the `pydantic` dependency from v2 to `~=1.10.15` (for projects that still pin pydantic v1). As a consequence, FastAPI is capped below `0.125.0` and Python is capped below `3.14` (FastAPI drops pydantic v1 support on 3.14+). All credit for the original project goes to Ian Sokolskyi; see [CHANGELOG.md](CHANGELOG.md) for what changed in this fork.
+
+[![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-darklime)](https://pypi.org/project/stemtrace-pydantic-v1)
+[![Python](https://img.shields.io/pypi/pyversions/stemtrace-pydantic-v1.svg)](https://pypi.org/project/stemtrace-pydantic-v1/)
+[![CI](https://github.com/ivkrak/stemtrace/actions/workflows/ci.yml/badge.svg)](https://github.com/ivkrak/stemtrace/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)](https://github.com/astral-sh/ruff)
 [![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)](https://mypy-lang.org/)
@@ -77,12 +78,13 @@ Stemtrace captures your task executions as a graph — visualize parent→child 
 
 ```bash
 # Using pip
-pip install stemtrace
+pip install stemtrace-pydantic-v1
 
 # Using uv
-uv add stemtrace
+uv add stemtrace-pydantic-v1
 ```
 
+The import name is still `stemtrace` (see below) — only the PyPI distribution name changed.
 
 ### 2. Instrument your Celery app
 
@@ -310,7 +312,7 @@ again once events are re-consumed.
 ```bash
 docker run -p 8000:8000 \
     -e STEMTRACE_BROKER_URL=redis://host.docker.internal:6379/0 \
-    ghcr.io/iansokolskyi/stemtrace
+    ghcr.io/ivkrak/stemtrace
 ```
 
 RabbitMQ example:
@@ -318,7 +320,7 @@ RabbitMQ example:
 ```bash
 docker run -p 8000:8000 \
     -e STEMTRACE_BROKER_URL=amqp://guest:guest@host.docker.internal:5672// \
-    ghcr.io/iansokolskyi/stemtrace
+    ghcr.io/ivkrak/stemtrace
 ```
 
 RabbitMQ broker + Redis event transport (recommended if you want history across server restarts):
@@ -327,7 +329,7 @@ RabbitMQ broker + Redis event transport (recommended if you want history across 
 docker run -p 8000:8000 \
     -e STEMTRACE_BROKER_URL=amqp://guest:guest@host.docker.internal:5672// \
     -e STEMTRACE_TRANSPORT_URL=redis://host.docker.internal:6379/0 \
-    ghcr.io/iansokolskyi/stemtrace
+    ghcr.io/ivkrak/stemtrace
 ```
 
 Or with Docker Compose:
@@ -335,7 +337,7 @@ Or with Docker Compose:
 ```yaml
 services:
   stemtrace:
-    image: ghcr.io/iansokolskyi/stemtrace
+    image: ghcr.io/ivkrak/stemtrace
     ports:
       - "8000:8000"
     environment:
@@ -358,7 +360,7 @@ For a local RabbitMQ setup, see [`docker-compose.rabbitmq.yml`](docker-compose.r
 The simplest way to run stemtrace — a dedicated monitoring service:
 
 ```bash
-pip install stemtrace
+pip install stemtrace-pydantic-v1
 
 stemtrace server
 ```
@@ -506,7 +508,7 @@ Contributions, bug reports, and feature requests are welcome! This is a communit
 See our [Contributing Guide](CONTRIBUTING.md) to get started.
 
 ```bash
-git clone https://github.com/iansokolskyi/stemtrace.git
+git clone https://github.com/ivkrak/stemtrace.git
 cd stemtrace
 uv sync --extra dev   # Install dependencies
 make check            # Run tests

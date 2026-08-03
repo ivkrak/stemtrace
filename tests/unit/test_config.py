@@ -46,7 +46,7 @@ class TestStemtraceConfig:
         """Config is immutable after creation."""
         config = StemtraceConfig(transport_url="redis://localhost:6379/0")
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             config.transport_url = "redis://other:6379/0"  # type: ignore[misc]
 
     def test_missing_transport_url_raises(self) -> None:

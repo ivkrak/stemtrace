@@ -116,7 +116,7 @@ def _node_to_response(node: TaskNode) -> TaskNodeResponse:
         chord_id=node.chord_id,
         parent_id=node.parent_id,
         children=node.children,
-        events=[TaskEventResponse.model_validate(e) for e in node.events],
+        events=[TaskEventResponse.from_orm(e) for e in node.events],
         first_seen=first_seen,
         last_updated=last_updated,
         duration_ms=duration_ms,
@@ -666,7 +666,7 @@ def create_api_router(
 
         workers = worker_registry.get_all_workers()
         return WorkerListResponse(
-            workers=[WorkerResponse.model_validate(w) for w in workers],
+            workers=[WorkerResponse.from_orm(w) for w in workers],
             total=len(workers),
         )
 
@@ -685,7 +685,7 @@ def create_api_router(
 
         workers = worker_registry.get_workers_by_hostname(hostname)
         return WorkerListResponse(
-            workers=[WorkerResponse.model_validate(w) for w in workers],
+            workers=[WorkerResponse.from_orm(w) for w in workers],
             total=len(workers),
         )
 

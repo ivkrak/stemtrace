@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from stemtrace.core.events import TaskState
 from stemtrace.core.graph import NodeType
@@ -28,7 +28,10 @@ class TaskStatus(str, Enum):
 class TaskEventResponse(BaseModel):
     """Single task event with full details."""
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
 
     task_id: str
     name: str
@@ -51,7 +54,10 @@ class TaskEventResponse(BaseModel):
 class TaskNodeResponse(BaseModel):
     """Task node with events and timing info."""
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
 
     task_id: str
     name: str
@@ -162,7 +168,10 @@ class TaskRegistryResponse(BaseModel):
 class WorkerResponse(BaseModel):
     """Information about a registered worker."""
 
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        """Pydantic model config."""
+
+        orm_mode = True
 
     hostname: str
     pid: int

@@ -1,15 +1,16 @@
 [project]
-name = "stemtrace"
-version = "0.3.4"
-description = "A lightweight Celery task flow visualizer"
+name = "stemtrace-pydantic-v1"
+version = "0.1.0"
+description = "A lightweight Celery task flow visualizer (pydantic v1 fork of stemtrace)"
 readme = "README.md"
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 authors = [
     { name = "Ian Sokolskyi", email = "iansokolskyi@gmail.com" },
 ]
 maintainers = [
     { name = "Ian Sokolskyi", email = "iansokolskyi@gmail.com" },
+    { name = "ivkrak", email = "ivkrak@embersky.ru" },
 ]
 keywords = ["celery", "task", "queue", "visualization", "monitoring", "workflow"]
 classifiers = [
@@ -25,17 +26,16 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Topic :: System :: Monitoring",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
 ]
 dependencies = [
     "celery>=5.0.0",
-    "pydantic>=2.0.0",
+    "pydantic>=1.10.15,<2.0.0",
     "typing_extensions>=4.0.0",
     "redis>=4.0.0",
-    "fastapi>=0.100.0",
+    "fastapi>=0.100.0,<0.125.0",  # 0.125.0+ imports pydantic.TypeAdapter unconditionally, breaking pydantic v1
     "typer>=0.9.0",
     "uvicorn[standard]>=0.20.0",
     "httpx>=0.24.0",  # Required for healthchecks in Docker
@@ -52,18 +52,18 @@ dev = [
     "pre-commit>=3.0.0",
     "types-redis>=4.0.0",
     "hatchling>=1.20.0",  # For build hook IDE support
-    "bump-my-version>=0.28.0",
     "websockets>=12.0",  # For WebSocket E2E tests
     "build>=1.0.0",  # For local package builds
     "twine>=5.0.0",  # For package verification
 ]
 
 [project.urls]
-Homepage = "https://github.com/iansokolskyi/stemtrace"
-Documentation = "https://github.com/iansokolskyi/stemtrace#readme"
-Repository = "https://github.com/iansokolskyi/stemtrace"
-Issues = "https://github.com/iansokolskyi/stemtrace/issues"
-Changelog = "https://github.com/iansokolskyi/stemtrace/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/ivkrak/stemtrace"
+Documentation = "https://github.com/ivkrak/stemtrace#readme"
+Repository = "https://github.com/ivkrak/stemtrace"
+Issues = "https://github.com/ivkrak/stemtrace/issues"
+Changelog = "https://github.com/ivkrak/stemtrace/blob/main/CHANGELOG.md"
+Upstream = "https://github.com/iansokolskyi/stemtrace"
 
 [project.scripts]
 stemtrace = "stemtrace.server.__main__:main"

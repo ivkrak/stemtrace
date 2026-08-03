@@ -35,9 +35,11 @@ def cleanup() -> object:
 def test_version() -> None:
     """Version is set and matches installed package metadata."""
     try:
-        installed = package_version("stemtrace")
+        installed = package_version("stemtrace-pydantic-v1")
     except PackageNotFoundError as exc:
-        raise AssertionError("stemtrace package metadata not available") from exc
+        raise AssertionError(
+            "stemtrace-pydantic-v1 package metadata not available"
+        ) from exc
     assert __version__ == installed
 
 

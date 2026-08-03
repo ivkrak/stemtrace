@@ -1,6 +1,6 @@
 """Configuration for stemtrace library."""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class StemtraceConfig(BaseModel):
@@ -21,7 +21,10 @@ class StemtraceConfig(BaseModel):
             to use args[index], or None to use the task name (default).
     """
 
-    model_config = ConfigDict(frozen=True)
+    class Config:
+        """Pydantic model config."""
+
+        frozen = True
 
     transport_url: str
     prefix: str = "stemtrace"

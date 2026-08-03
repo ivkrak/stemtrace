@@ -1,5 +1,5 @@
 [tool.bumpversion]
-current_version = "0.3.4"
+current_version = "0.1.0"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 commit = true
@@ -27,9 +27,9 @@ replace = '"version": "{new_version}"'
 # uv.lock - keep workspace lockfile in sync (uv stores the local project version)
 [[tool.bumpversion.files]]
 filename = "uv.lock"
-search = """name = "stemtrace"
+search = """name = "stemtrace-pydantic-v1"
 version = "{current_version}"""
-replace = """name = "stemtrace"
+replace = """name = "stemtrace-pydantic-v1"
 version = "{new_version}"""
 
 # CHANGELOG.md - insert new version header
@@ -43,5 +43,5 @@ replace = """## [Unreleased]
 # README.md - keep PyPI badge in sync with version (avoid cached badge drift)
 [[tool.bumpversion.files]]
 filename = "README.md"
-search = "[![PyPI version](https://img.shields.io/badge/pypi-v{current_version}-darklime)](https://pypi.org/project/stemtrace)"
-replace = "[![PyPI version](https://img.shields.io/badge/pypi-v{new_version}-darklime)](https://pypi.org/project/stemtrace)"
+search = "[![PyPI version](https://img.shields.io/badge/pypi-v{current_version}-darklime)](https://pypi.org/project/stemtrace-pydantic-v1)"
+replace = "[![PyPI version](https://img.shields.io/badge/pypi-v{new_version}-darklime)](https://pypi.org/project/stemtrace-pydantic-v1)"

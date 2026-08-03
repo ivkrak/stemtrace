@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class TaskState(str, Enum):
@@ -42,7 +42,10 @@ class RegisteredTaskDefinition(BaseModel):
         bound: Whether the task is bound (`bind=True`) and receives `self`.
     """
 
-    model_config = ConfigDict(frozen=True)
+    class Config:
+        """Pydantic model config."""
+
+        frozen = True
 
     name: str
     module: str | None = None
@@ -76,7 +79,10 @@ class TaskEvent(BaseModel):
         traceback: Full traceback string (FAILURE/RETRY states).
     """
 
-    model_config = ConfigDict(frozen=True)
+    class Config:
+        """Pydantic model config."""
+
+        frozen = True
 
     task_id: str
     name: str
@@ -113,7 +119,10 @@ class WorkerEvent(BaseModel):
         shutdown_time: When worker shut down (shutdown event only).
     """
 
-    model_config = ConfigDict(frozen=True)
+    class Config:
+        """Pydantic model config."""
+
+        frozen = True
 
     event_type: WorkerEventType
     hostname: str

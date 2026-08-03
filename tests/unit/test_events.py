@@ -1,5 +1,6 @@
 """Tests for core event models."""
 
+import json
 from datetime import UTC, datetime
 
 import pytest
@@ -75,7 +76,7 @@ class TestTaskEventCreation:
     def test_validates_field_types(self) -> None:
         with pytest.raises(ValidationError):
             TaskEvent(
-                task_id=123,  # type: ignore[arg-type]
+                task_id=["not", "a", "string"],  # type: ignore[arg-type]
                 name="test",
                 state=TaskState.PENDING,
                 timestamp=datetime.now(UTC),
@@ -118,7 +119,7 @@ class TestTaskEventImmutability:
             state=TaskState.STARTED,
             timestamp=datetime.now(UTC),
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             event.task_id = "changed"  # type: ignore[misc]
 
     def test_cannot_modify_state(self) -> None:
@@ -128,7 +129,7 @@ class TestTaskEventImmutability:
             state=TaskState.STARTED,
             timestamp=datetime.now(UTC),
         )
-        with pytest.raises(ValidationError):
+        with pytest.raises(TypeError):
             event.state = TaskState.SUCCESS  # type: ignore[misc]
 
 
@@ -197,7 +198,7 @@ class TestTaskEventSerialization:
             state=TaskState.STARTED,
             timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
         )
-        data = event.model_dump()
+        data = event.dict()
         assert data["task_id"] == "abc-123"
         assert data["state"] == TaskState.STARTED
         assert data["parent_id"] is None
@@ -209,7 +210,7 @@ class TestTaskEventSerialization:
             state=TaskState.STARTED,
             timestamp=datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC),
         )
-        json_str = event.model_dump_json()
+        json_str = event.json()
         assert "abc-123" in json_str
         assert "STARTED" in json_str
 
@@ -222,7 +223,7 @@ class TestTaskEventSerialization:
             "parent_id": "parent-001",
             "retries": 2,
         }
-        event = TaskEvent.model_validate(data)
+        event = TaskEvent.parse_obj(data)
         assert event.task_id == "abc-123"
         assert event.state == TaskState.SUCCESS
         assert event.parent_id == "parent-001"
@@ -239,8 +240,7 @@ class TestTaskEventSerialization:
             trace_id="trace-xyz",
             retries=1,
         )
-        data = original.model_dump(mode="json")
-        restored = TaskEvent.model_validate(data)
+        restored = TaskEvent.parse_obj(json.loads(original.json()))
         assert restored == original
 
 
@@ -316,7 +316,7 @@ class TestWorkerEventCreation:
             timestamp=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
             registered_tasks=["myapp.tasks.send_email"],
         )
-        data = event.model_dump()
+        data = event.dict()
         assert data["event_type"] == "worker_ready"
         assert data["hostname"] == "worker-1.example.com"
         assert data["pid"] == 12345
@@ -332,7 +332,7 @@ class TestWorkerEventCreation:
             timestamp=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
             registered_tasks=["myapp.tasks.process"],
         )
-        json_str = event.model_dump_json()
+        json_str = event.json()
         assert "worker_ready" in json_str
         assert "worker-1.example.com" in json_str
         assert str(12345) in json_str
@@ -346,6 +346,5 @@ class TestWorkerEventCreation:
             timestamp=datetime(2024, 2, 1, 12, 0, tzinfo=UTC),
             registered_tasks=["myapp.tasks.analyze"],
         )
-        data = original.model_dump(mode="json")
-        restored = WorkerEvent.model_validate(data)
+        restored = WorkerEvent.parse_obj(json.loads(original.json()))
         assert restored == original

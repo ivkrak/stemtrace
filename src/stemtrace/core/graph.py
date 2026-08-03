@@ -2,7 +2,7 @@
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 
 from stemtrace.core.events import TaskEvent, TaskState
 
@@ -18,7 +18,10 @@ class NodeType(str, Enum):
 class TaskNode(BaseModel):
     """Mutable node in the task graph. Tracks event history and child relationships."""
 
-    model_config = ConfigDict(validate_assignment=True)
+    class Config:
+        """Pydantic model config."""
+
+        validate_assignment = True
 
     task_id: str
     name: str
@@ -41,7 +44,10 @@ class TaskGraph(BaseModel):
     Synthetic nodes (GROUP, CHORD) are created when tasks share a group_id.
     """
 
-    model_config = ConfigDict(validate_assignment=True)
+    class Config:
+        """Pydantic model config."""
+
+        validate_assignment = True
 
     nodes: dict[str, TaskNode] = Field(default_factory=dict)
     root_ids: list[str] = Field(default_factory=list)

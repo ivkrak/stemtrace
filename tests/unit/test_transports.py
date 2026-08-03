@@ -316,7 +316,7 @@ class TestRedisTransport:
         call_args = mock_client.xadd.call_args
         data = call_args[0][1]["data"]
         # Verify it's valid JSON that can be deserialized back
-        restored = TaskEvent.model_validate_json(data)
+        restored = TaskEvent.parse_raw(data)
         assert restored == sample_event
 
     def test_publish_logs_error_on_exception(
@@ -358,7 +358,7 @@ class TestRedisTransport:
         worker_event: WorkerEvent,
     ) -> None:
         """consume() yields WorkerEvent instances from stream when event_type present."""
-        serialized = worker_event.model_dump_json().encode()
+        serialized = worker_event.json().encode()
         mock_client.xread.return_value = [
             (
                 b"test:events",
@@ -381,7 +381,7 @@ class TestRedisTransport:
         sample_event: TaskEvent,
     ) -> None:
         """consume() yields TaskEvent instances from stream."""
-        serialized = sample_event.model_dump_json().encode()
+        serialized = sample_event.json().encode()
         mock_client.xread.return_value = [
             (
                 b"test:events",
@@ -405,7 +405,7 @@ class TestRedisTransport:
         sample_event: TaskEvent,
     ) -> None:
         """consume() updates last_id after each message."""
-        serialized = sample_event.model_dump_json().encode()
+        serialized = sample_event.json().encode()
 
         # Return two messages, verify second xread uses updated ID
         mock_client.xread.return_value = [
@@ -442,7 +442,7 @@ class TestRedisTransport:
         sample_event: TaskEvent,
     ) -> None:
         """consume() handles string message IDs (not bytes)."""
-        serialized = sample_event.model_dump_json().encode()
+        serialized = sample_event.json().encode()
         # Message ID as string, not bytes
         mock_client.xread.return_value = [
             (
@@ -465,7 +465,7 @@ class TestRedisTransport:
         sample_event: TaskEvent,
     ) -> None:
         """consume() handles string 'data' key (not bytes)."""
-        serialized = sample_event.model_dump_json()  # String, not bytes
+        serialized = sample_event.json()  # String, not bytes
         mock_client.xread.return_value = [
             (
                 b"test:events",
@@ -488,7 +488,7 @@ class TestRedisTransport:
         sample_event: TaskEvent,
     ) -> None:
         """consume() skips messages without data, continues to next."""
-        serialized = sample_event.model_dump_json().encode()
+        serialized = sample_event.json().encode()
         call_count = 0
 
         def xread_side_effect(*args: Any, **kwargs: Any) -> list[Any]:
@@ -528,7 +528,7 @@ class TestRedisTransport:
     ) -> None:
         """consume() respects custom last_id parameter."""
         transport = RedisTransport(client=mock_client, prefix="test", ttl=3600)
-        serialized = sample_event.model_dump_json().encode()
+        serialized = sample_event.json().encode()
 
         def xread_side_effect(*args: Any, **kwargs: Any) -> list[Any]:
             # Verify first call uses custom ID
@@ -562,7 +562,7 @@ class TestRedisTransport:
         caplog: Any,
     ) -> None:
         """consume() should continue on empty reads and skip invalid JSON payloads."""
-        serialized = sample_event.model_dump_json().encode()
+        serialized = sample_event.json().encode()
         call_count = 0
 
         def xread_side_effect(*args: Any, **kwargs: Any) -> list[Any]:
@@ -752,7 +752,7 @@ class TestRabbitMQTransport:
             name="tests.t1",
             state=TaskState.SUCCESS,
             timestamp=datetime(2024, 1, 1, tzinfo=UTC),
-        ).model_dump(mode="json")
+        ).dict()
         parsed = RabbitMQTransport._parse_event(payload)
         assert isinstance(parsed, TaskEvent)
         assert parsed.task_id == "t1"
@@ -765,7 +765,7 @@ class TestRabbitMQTransport:
             pid=1,
             timestamp=datetime(2024, 1, 1, tzinfo=UTC),
             registered_tasks=[],
-        ).model_dump(mode="json")
+        ).dict()
         parsed = RabbitMQTransport._parse_event(payload)
         assert isinstance(parsed, WorkerEvent)
         assert parsed.hostname == "h"
@@ -806,7 +806,7 @@ class TestRabbitMQTransport:
                 name="tests.consume",
                 state=TaskState.RECEIVED,
                 timestamp=datetime(2024, 1, 1, tzinfo=UTC),
-            ).model_dump(mode="json")
+            ).dict()
             # Use the fake message type we installed on the kombu module.
             msg = sys.modules["kombu"].FakeMessage()  # type: ignore[attr-defined]
             seen["msg"] = msg
@@ -934,7 +934,7 @@ class TestRabbitMQTransport:
                     name="tests.consume",
                     state=TaskState.RECEIVED,
                     timestamp=datetime(2024, 1, 1, tzinfo=UTC),
-                ).model_dump(mode="json")
+                ).dict()
                 seen["valid_msg"] = FakeMessage(reject_raises=False)
                 for cb in callbacks:
                     cb(body, seen["valid_msg"])
@@ -972,7 +972,7 @@ class TestRabbitMQTransport:
             state=TaskState.SUCCESS,
             timestamp=datetime(2024, 1, 1, tzinfo=UTC),
         )
-        json_str = event.model_dump_json()
+        json_str = event.json()
         parsed_str = RabbitMQTransport._parse_event(json_str)
         assert isinstance(parsed_str, TaskEvent)
         assert parsed_str.task_id == "t3"

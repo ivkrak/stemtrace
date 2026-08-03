@@ -57,7 +57,7 @@ class WebSocketManager:
         if not self._connections:
             return
 
-        message = event.model_dump_json()
+        message = event.json()
         disconnected: list[WebSocket] = []
 
         for websocket in self._connections.copy():

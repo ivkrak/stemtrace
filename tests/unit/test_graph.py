@@ -1,5 +1,6 @@
 """Tests for task graph models."""
 
+import json
 from datetime import UTC, datetime
 
 import pytest
@@ -418,7 +419,7 @@ class TestTaskGraphSerialization:
                 timestamp=datetime.now(UTC),
             )
         )
-        data = graph.model_dump()
+        data = graph.dict()
         assert "nodes" in data
         assert "root_ids" in data
         assert "task-1" in data["nodes"]
@@ -442,8 +443,7 @@ class TestTaskGraphSerialization:
                 parent_id="parent",
             )
         )
-        data = graph.model_dump(mode="json")
-        restored = TaskGraph.model_validate(data)
+        restored = TaskGraph.parse_obj(json.loads(graph.json()))
         assert restored.root_ids == graph.root_ids
         assert "parent" in restored.nodes
         assert "child" in restored.nodes

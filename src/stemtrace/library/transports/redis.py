@@ -86,7 +86,7 @@ class RedisTransport:
         try:
             self._client.xadd(
                 self._stream_key,
-                {"data": event.model_dump_json()},
+                {"data": event.json()},
                 maxlen=self._maxlen,
                 approximate=True,
             )
@@ -146,10 +146,10 @@ class RedisTransport:
         parsed = json.loads(data_str)
         if "event_type" in parsed:
             # WorkerEvent has event_type field
-            return WorkerEvent.model_validate(parsed)
+            return WorkerEvent.parse_obj(parsed)
         if "task_id" in parsed:
             # TaskEvent has task_id field
-            return TaskEvent.model_validate(parsed)
+            return TaskEvent.parse_obj(parsed)
         raise ValueError("Unknown event payload: missing event_type and task_id")
 
     @classmethod
