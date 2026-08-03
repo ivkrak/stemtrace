@@ -177,6 +177,27 @@ class TaskGraph(BaseModel):
         # Check if this task is a callback for any existing CHORD
         self._link_chord_callback_if_needed(event.task_id)
 
+    def _reparent(self, task_id: str, new_parent_id: str) -> None:
+        """Point task_id's parent_id at new_parent_id, detaching from any prior parent.
+
+        Used to attach a task to a synthetic GROUP/CHORD container (or the
+        container's callback), overriding whatever "incidental" parent an
+        earlier event may have set — e.g. a chord callback is technically
+        dispatched by whichever header task completes last, but it should
+        always be linked under the CHORD container, not that header.
+        """
+        task_node = self.nodes[task_id]
+        old_parent_id = task_node.parent_id
+        if old_parent_id == new_parent_id:
+            return
+        if old_parent_id and old_parent_id in self.nodes:
+            old_parent = self.nodes[old_parent_id]
+            if task_id in old_parent.children:
+                old_parent.children.remove(task_id)
+        task_node.parent_id = new_parent_id
+        if task_id in self.root_ids:
+            self.root_ids.remove(task_id)
+
     def _track_group_member(self, task_id: str, group_id: str) -> None:
         """Track task as member of a group and create synthetic node if needed.
 
@@ -193,11 +214,7 @@ class TaskGraph(BaseModel):
                 and chord_node.chord_id == task_id
             ):
                 # This is the callback - link it to CHORD but not as group member
-                task_node = self.nodes[task_id]
-                if task_node.parent_id is None:
-                    task_node.parent_id = group_node_id
-                    if task_id in self.root_ids:
-                        self.root_ids.remove(task_id)
+                self._reparent(task_id, group_node_id)
                 if task_id not in chord_node.children:
                     chord_node.children.append(task_id)
                 return  # Don't add to _group_members
@@ -235,16 +252,7 @@ class TaskGraph(BaseModel):
             # replaced by the synthetic container, same as members present
             # at creation time, or the chain visually breaks (member still
             # listed under both its real parent and the group).
-            task_node = self.nodes[task_id]
-            old_parent_id = task_node.parent_id
-            if old_parent_id != group_node_id:
-                if old_parent_id and old_parent_id in self.nodes:
-                    old_parent = self.nodes[old_parent_id]
-                    if task_id in old_parent.children:
-                        old_parent.children.remove(task_id)
-                task_node.parent_id = group_node_id
-                if task_id in self.root_ids:
-                    self.root_ids.remove(task_id)
+            self._reparent(task_id, group_node_id)
 
     def _should_create_group_node(self, member_ids: list[str]) -> bool:
         """Determine if a synthetic GROUP node should be created.
@@ -423,13 +431,10 @@ class TaskGraph(BaseModel):
         """
         for node in self.nodes.values():
             if node.node_type == NodeType.CHORD and node.chord_callback_id == task_id:
-                callback_node = self.nodes.get(task_id)
-                if callback_node:
-                    # Link callback to CHORD
-                    if callback_node.parent_id is None:
-                        callback_node.parent_id = node.task_id
-                        if task_id in self.root_ids:
-                            self.root_ids.remove(task_id)
+                if task_id in self.nodes:
+                    # Link callback to CHORD, overriding whatever incidental
+                    # parent its own event may carry (see _reparent).
+                    self._reparent(task_id, node.task_id)
                     # Add to children for edge rendering
                     if task_id not in node.children:
                         node.children.append(task_id)

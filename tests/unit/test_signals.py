@@ -685,6 +685,47 @@ class TestTaskSent:
         event = MemoryTransport.events[0]
         assert event.name == "tests.fallback_task"
 
+    def test_captures_parent_and_root_id_from_headers(
+        self,
+        transport: MemoryTransport,
+    ) -> None:
+        """task_sent captures parent_id/root_id from headers, like other events.
+
+        Without these, the PENDING event creates the node with no parent (it
+        becomes a root), and a later event correcting it may attach the task
+        to whatever technically triggered it instead of the intended
+        synthetic GROUP/CHORD container (e.g. a chord callback).
+        """
+        _on_task_sent(
+            sender="tests.sample_task",
+            task_id="task-123",
+            task="tests.sample_task",
+            args=(),
+            kwargs={},
+            headers={"parent_id": "parent-abc", "root_id": "root-xyz"},
+        )
+
+        event = MemoryTransport.events[0]
+        assert event.parent_id == "parent-abc"
+        assert event.root_id == "root-xyz"
+
+    def test_missing_parent_and_root_id_default_to_none(
+        self,
+        transport: MemoryTransport,
+    ) -> None:
+        """task_sent without headers leaves parent_id/root_id as None."""
+        _on_task_sent(
+            sender="tests.sample_task",
+            task_id="task-123",
+            task="tests.sample_task",
+            args=(),
+            kwargs={},
+        )
+
+        event = MemoryTransport.events[0]
+        assert event.parent_id is None
+        assert event.root_id is None
+
 
 class TestFireAndForget:
     """Tests for fire-and-forget behavior."""

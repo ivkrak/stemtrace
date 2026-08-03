@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-03
+
+### Fixed
+- Redis transport: `consume()` no longer crashes the server's background
+  consumer thread on a transient Redis connection/timeout error (e.g. a
+  dropped connection through a proxy/NAT). It now logs and retries after a
+  short delay, matching the RabbitMQ transport's resilience. Previously any
+  network blip permanently stopped event consumption until a manual restart.
+- Signals: `task_sent` (the `PENDING` event) now carries `parent_id`/`root_id`
+  from the message headers, like every other lifecycle event. Without it, a
+  task's very first event created its graph node with no parent (added to
+  `root_ids`), and a chord callback in particular would end up attached to
+  whichever header task happened to trigger it (an implementation detail of
+  Celery's chord-unlock mechanism) instead of the intended container.
+- Graph: a CHORD callback is now always re-parented under the CHORD
+  container, even if its own event already carries a different `parent_id`.
+  Celery auto-assigns `parent_id` to whichever header task's execution
+  context dispatches the callback; that incidental link was previously left
+  in place, splitting the callback (and everything chained after it) into
+  its own disconnected root graph instead of continuing the chain.
+
 ## [0.1.2] - 2026-08-03
 
 ### Fixed

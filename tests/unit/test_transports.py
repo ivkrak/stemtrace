@@ -592,6 +592,45 @@ class TestRedisTransport:
         assert call_count == 3
         assert "Failed to parse event from Redis stream" in caplog.text
 
+    def test_consume_retries_after_redis_connection_error(
+        self,
+        transport: RedisTransport,
+        mock_client: MagicMock,
+        sample_event: TaskEvent,
+        caplog: Any,
+        monkeypatch: Any,
+    ) -> None:
+        """consume() should retry (not raise/stop) after a transient Redis error."""
+        from redis.exceptions import TimeoutError as RedisTimeoutError
+
+        monkeypatch.setattr("stemtrace.library.transports.redis.time.sleep", lambda _: None)
+
+        serialized = sample_event.json().encode()
+        call_count = 0
+
+        def xread_side_effect(*args: Any, **kwargs: Any) -> list[Any]:
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                raise RedisTimeoutError("Timeout reading from socket")
+            return [
+                (
+                    b"test:events",
+                    [(b"1234567890-0", {b"data": serialized})],
+                )
+            ]
+
+        mock_client.xread.side_effect = xread_side_effect
+
+        events = []
+        for event in transport.consume():
+            events.append(event)
+            break
+
+        assert call_count == 2
+        assert events == [sample_event]
+        assert "Redis connection error" in caplog.text
+
 
 def _install_fake_kombu_for_consume(
     monkeypatch: Any, *, drain_handler: Any

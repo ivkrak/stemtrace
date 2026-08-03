@@ -1207,6 +1207,50 @@ class TestChordNodeCreation:
         # Callback is NOT in root_ids
         assert callback_id not in graph.root_ids
 
+    def test_callback_reparented_to_chord_despite_incidental_parent(self) -> None:
+        """A callback whose own event already carries a parent_id must still
+        be re-linked under the CHORD, not left under that parent.
+
+        Celery auto-assigns parent_id to whichever task's execution context
+        dispatches the callback (the header task that completes the chord,
+        via the redis backend's on_chord_part_return) — that's an incidental
+        detail of which header happened to finish last, not the intended
+        graph structure, which should always show the callback under CHORD.
+        """
+        graph = TaskGraph()
+        group_id = "chord-reparent-test"
+        callback_id = "aggregate-task"
+        header_id = "header-1"
+
+        graph.add_event(
+            TaskEvent(
+                task_id=header_id,
+                name="myapp.tasks.add",
+                state=TaskState.SUCCESS,
+                timestamp=datetime.now(UTC),
+                group_id=group_id,
+                chord_callback_id=callback_id,
+            )
+        )
+
+        # Callback's own event carries parent_id = the header that technically
+        # dispatched it, not the group — this must not stick.
+        graph.add_event(
+            TaskEvent(
+                task_id=callback_id,
+                name="myapp.tasks.aggregate",
+                state=TaskState.SUCCESS,
+                timestamp=datetime.now(UTC),
+                parent_id=header_id,
+            )
+        )
+
+        chord_node_id = f"group:{group_id}"
+        assert graph.nodes[callback_id].parent_id == chord_node_id
+        assert callback_id not in graph.nodes[header_id].children
+        assert callback_id in graph.nodes[chord_node_id].children
+        assert callback_id not in graph.root_ids
+
     def test_callback_not_in_group_members(self) -> None:
         """Callback task should NOT be counted as a group member (it's outside)."""
         graph = TaskGraph()

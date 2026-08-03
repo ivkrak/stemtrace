@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import TYPE_CHECKING, Any
 
 from pydantic import ValidationError
+from redis.exceptions import RedisError
 from typing_extensions import Self
 
 from stemtrace.core.events import TaskEvent, WorkerEvent
@@ -107,15 +109,27 @@ class RedisTransport:
         """Blocking iterator that yields events as they arrive.
 
         Detects event type from JSON and yields appropriate model
-        (TaskEvent or WorkerEvent).
+        (TaskEvent or WorkerEvent). Resilient to transient Redis
+        connection/timeout errors: logs and retries instead of raising,
+        so a network blip doesn't permanently stop the consumer.
         """
         current_id = last_id
         while True:
-            results = self._client.xread(
-                {self._stream_key: current_id},
-                block=5000,
-                count=100,
-            )
+            try:
+                results = self._client.xread(
+                    {self._stream_key: current_id},
+                    block=5000,
+                    count=100,
+                )
+            except RedisError:
+                logger.warning(
+                    "Redis connection error while reading stream %s, retrying",
+                    self._stream_key,
+                    exc_info=True,
+                )
+                time.sleep(1)
+                continue
+
             if not results:
                 continue
 

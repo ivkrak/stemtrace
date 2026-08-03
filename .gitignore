@@ -33,3 +33,8 @@ src/stemtrace/server/ui/frontend/src/routeTree.gen.ts
 src/stemtrace/server/ui/frontend/playwright-report/
 src/stemtrace/server/ui/frontend/test-results/
 src/stemtrace/server/ui/frontend/playwright/.cache/
+
+# Local dev overrides (may contain real credentials, e.g. broker/transport URLs)
+docker-compose.override.yml
+.env
+.env.*

@@ -386,8 +386,14 @@ def _on_task_sent(
 
     task_name = task or sender or "unknown"
 
-    # Extract group_id from headers if available
+    # Extract group_id/parent_id/root_id from headers if available. Without
+    # parent_id here, this PENDING event creates the node with no parent (it
+    # gets added to root_ids), and a later event correcting it may attach the
+    # task to whatever triggered it directly (e.g. a chord header dispatching
+    # its callback) instead of the intended synthetic GROUP/CHORD container.
     group_id = headers.get("group") if headers else None
+    parent_id = headers.get("parent_id") if headers else None
+    root_id = headers.get("root_id") if headers else None
 
     _publish_event(
         TaskEvent(
@@ -395,6 +401,8 @@ def _on_task_sent(
             name=task_name,
             state=TaskState.PENDING,
             timestamp=datetime.now(timezone.utc),
+            parent_id=parent_id,
+            root_id=root_id,
             group_id=group_id,
             args=_scrub_and_serialize_args(args) if args else None,
             kwargs=_scrub_and_serialize_kwargs(kwargs) if kwargs else None,
