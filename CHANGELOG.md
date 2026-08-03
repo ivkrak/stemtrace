@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Signals: temporarily log chord metadata extraction at WARNING level to diagnose
+  callback linking in deployed Celery workflows.
+
+### Changed
+- Releases no longer build or publish Docker images; they publish only the Python
+  package and GitHub Release artifacts.
+
 ## [0.1.3] - 2026-08-03
 
 ### Fixed
