@@ -144,7 +144,7 @@ release:
 	git push origin "$$TAG"; \
 	echo ""; \
 	echo "✅ Released $$TAG"; \
-	echo "   → GitHub Actions will publish to PyPI and Docker"
+	echo "   → GitHub Actions will publish to PyPI and create a GitHub Release"
 
 # =============================================================================
 # E2E Testing
