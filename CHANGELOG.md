@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Graph: preserve parent links when multiple chords occur in one chain.
+
 ## [0.1.0] - 2026-08-03
 
 This is the first release of **`stemtrace-pydantic-v1`**, an unofficial fork of
